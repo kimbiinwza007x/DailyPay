@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# แพ็กเกจที่มี native binding ต้องรัน postinstall จริง ไม่งั้นใช้ไม่ได้
+allowBuilds:
+  esbuild: true
+  sharp: true
+  tesseract.js: true
+  "@napi-rs/canvas": true

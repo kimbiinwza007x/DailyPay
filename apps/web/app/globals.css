@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* พาเลตต์จาก figma-design/svg/07-foundations.svg + ฟอนต์ Prompt (หัวข้อ) / Sarabun (เนื้อหา) */
+@theme {
+  --color-ink: #1f2430;
+  --color-muted: #7c8398;
+  --color-canvas: #f4f5fa;
+  --color-brand: #6c5ce7;
+  --color-income: #12b886;
+  --color-expense: #fa5252;
+  --color-warn: #e8a008;
+  --color-info: #4dabf7;
+  --color-accent: #22b8cf;
+  --color-violet: #be7be0;
+
+  --font-display: "Prompt", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Sarabun", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-canvas);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+/* ตัวเลขเงินต้องเรียงหลักตรงกันทุกแถว ไม่งั้นอ่านคอลัมน์ยอดไม่ออก */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

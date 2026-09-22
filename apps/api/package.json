@@ -1,0 +1,48 @@
+{
+  "name": "@dailypay/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "dev:worker": "nest start --watch --entryFile worker",
+    "start": "node dist/main.js",
+    "start:worker": "node dist/worker.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@dailypay/shared": "workspace:*",
+    "@nestjs/common": "^11.0.8",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.8",
+    "@nestjs/platform-express": "^11.0.8",
+    "@supabase/supabase-js": "^2.48.1",
+    "csv-parse": "^5.6.0",
+    "decimal.js": "^10.4.3",
+    "jose": "^5.9.6",
+    "pdfjs-dist": "^4.10.38",
+    "pg": "^8.13.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^5.1.1",
+    "zod": "^3.24.1",
+    "zxing-wasm": "^2.1.0",
+    "dotenv": "^16.4.7",
+    "@napi-rs/canvas": "^0.1.65",
+    "@vercel/functions": "^2.0.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.2",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
