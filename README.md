@@ -86,7 +86,8 @@ pnpm dev:worker   # ดึงงานจากตาราง jobs
 pnpm dev:web      # http://localhost:3000
 ```
 
-**ต้องรัน worker ด้วยเสมอ** — ไฟล์ที่อัปโหลดจะค้างสถานะ `parsing` ตลอดกาลถ้าไม่มีใครดึงงาน
+API ประมวลผลไฟล์เองทันทีหลังอัปโหลด `dev:worker` ไม่จำเป็นแล้ว แต่รันคู่ไว้ได้
+ช่วยเก็บงานที่ล้มเหลวแล้วถูกเลื่อนเวลาไว้ (backoff) — for update skip locked กันแย่งงานกัน
 
 ## เส้นทาง API
 
@@ -161,6 +162,66 @@ pnpm test      # 45 เทส ครอบ dedupe, fingerprint, parsers, categor
 
 fixture ของเทสคือข้อความที่ tesseract อ่านออกมาจริง ไม่ใช่ข้อความที่พิมพ์เอง
 ถ้าเจอสลิปค่ายใหม่ที่อ่านไม่ออก ให้ dump ข้อความ OCR เพิ่มเข้า `test/fixtures-ocr.json`
+
+## Deploy ขึ้น Vercel
+
+ขึ้นเป็น **2 โปรเจกต์จาก repo เดียว** — เว็บกับ API แยกกัน ไม่มี worker ค้าง
+
+| โปรเจกต์ | Root Directory | ได้อะไร |
+|---|---|---|
+| `dailypay-api` | `apps/api` | Nest ทั้งตัวเป็น function เดียว (`api/index.js`) + cron วันละครั้ง |
+| `dailypay-web` | `apps/web` | Next.js |
+
+ค่า build/install/region ตั้งไว้ใน `vercel.json` ของแต่ละแอปแล้ว ไม่ต้องกรอกในหน้า dashboard
+
+### ไม่มี worker แล้วงานในคิวทำงานยังไง
+
+Vercel ไม่มี process ค้าง และ cron บน Hobby รันได้**วันละครั้ง** จึงให้ API ทำงานในคิวเอง
+ตาราง `jobs` ยังเป็นแหล่งความจริง enqueue ยังอยู่ใน transaction เดียวกับ insert เหมือนเดิม
+
+1. **หลังอัปโหลด/commit** — ตอบผู้ใช้ก่อน แล้วรันคิวต่อเบื้องหลังด้วย `waitUntil` (`worker/queue-kicker.ts`)
+2. **ปุ่ม "ประมวลผลตอนนี้"** — โผล่ในหน้าตรวจเมื่อ batch ค้างสถานะ `parsing`
+3. **cron 03:00 น.** — `GET /api/cron/drain` ตาข่ายสุดท้าย เก็บงานที่หลุดหรือล้มเหลว
+
+### ขั้นตอน
+
+**1. เอาโค้ดขึ้น GitHub** — Vercel ดึงจาก Git (โฟลเดอร์นี้ยังไม่ใช่ git repo)
+
+**2. สร้างโปรเจกต์ API** — Vercel → Add New → Project → เลือก repo → Root Directory = `apps/api` → ใส่ env
+
+| ตัวแปร | ค่า |
+|---|---|
+| `DATABASE_URL` | **Transaction pooler (พอร์ต 6543)** — ไม่ใช่ 5432 ที่ใช้บนเครื่อง |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | ค่าเดิม |
+| `CORS_ORIGIN` | URL ของโปรเจกต์เว็บ (ใส่ทีหลังได้ ดูข้อ 4) |
+| `CRON_SECRET` | สุ่มยาว ๆ อะไรก็ได้ |
+| `NODE_ENV` | `production` |
+
+**3. สร้างโปรเจกต์เว็บ** — Root Directory = `apps/web`
+
+| ตัวแปร | ค่า |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ค่าเดิม |
+| `NEXT_PUBLIC_API_URL` | URL ของโปรเจกต์ API เช่น `https://dailypay-api.vercel.app` |
+
+**ห้ามใส่ `SUPABASE_SERVICE_ROLE_KEY` ในโปรเจกต์เว็บ** และห้ามตั้ง `NEXT_PUBLIC_AUTH_DISABLED=true`
+(`next.config.ts` จะไม่ยอม build ถ้าปิด auth บน production)
+
+**4. กลับไปแก้ `CORS_ORIGIN` ของ API** เป็น URL เว็บจริง แล้ว Redeploy
+
+**5. บอก Supabase ว่ามีโดเมนใหม่** — ข้ามข้อนี้แล้ว magic link จะพาไป `localhost`
+
+Supabase → Authentication → URL Configuration
+- Site URL: `https://<โปรเจกต์เว็บ>.vercel.app`
+- Redirect URLs: เพิ่ม `https://<โปรเจกต์เว็บ>.vercel.app/**` (เก็บ `http://localhost:3000/**` ไว้ด้วยถ้ายังพัฒนาบนเครื่อง)
+
+### ข้อจำกัดที่ต้องรู้
+
+- **ไฟล์อัปโหลดได้ไม่เกิน 4 MB** — Vercel ตัด request body ที่เกิน 4.5 MB ทิ้งก่อนถึงโค้ด สลิปใบละ 200-350 KB สบาย
+- **ใบแรกหลัง deploy หรือหลังไม่ได้ใช้นานจะช้า** — tesseract ต้องโหลดข้อมูลภาษาไทยจาก CDN ใหม่
+  และ zxing โหลด `.wasm` จาก CDN เช่นกัน ใบถัดไปเร็วขึ้น
+- **region ตั้งไว้ `bom1` (มุมไบ)** ให้ใกล้ฐานข้อมูล Supabase (`ap-south-1`) ถ้าย้ายฐานข้อมูลไป region อื่นให้แก้ใน `vercel.json` ทั้งสองแอป
+  ถ้าปล่อยเป็นค่าเริ่มต้น (สหรัฐฯ) ทุก query จะช้าขึ้นราว 200 ms และหนึ่งการ parse มีหลายสิบ query
 
 ## ที่ยังไม่เสร็จ
 

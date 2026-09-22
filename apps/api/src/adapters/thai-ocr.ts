@@ -22,6 +22,21 @@ import { renderPdfFirstPage } from '../core/parsers/pdf-text';
 
 const log = new Logger('ThaiOcr');
 
+/**
+ * บอกเครื่องมือ trace ของ Vercel (nft) ว่าต้องรวมไฟล์ .wasm ของ tesseract เข้า bundle
+ *
+ * tesseract.js เลือก core ตอนรันด้วย require แบบ dynamic (ดู worker-script/node/getCore.js)
+ * nft เห็นแค่ไฟล์ .js แล้วรวมเข้าไป แต่ .wasm ที่ .js นั้นอ่านจากข้าง ๆ ตัวเองไม่ถูกรวม
+ * ผลคือ OCR พังทุกใบบน Vercel แต่บนเครื่องตัวเองใช้ได้ปกติ — ตรวจเจอจาก `vercel build`
+ *
+ * อ้างด้วยสตริงตรง ๆ แบบนี้ nft ถึงจะเห็น (ถ้าประกอบ path เองมันจะมองไม่ออก)
+ * ใช้แค่ตัว LSTM เพราะ createWorker(..., 1) = OEM.LSTM_ONLY
+ */
+export const TESSERACT_CORE_WASM = [
+  require.resolve('tesseract.js-core/tesseract-core-simd-lstm.wasm'),
+  require.resolve('tesseract.js-core/tesseract-core-lstm.wasm'),
+];
+
 /** สระบน/ล่าง + วรรณยุกต์ ที่ OCR มักใส่เกินหรือตกหล่น ตัดทิ้งก่อนเทียบชื่อเดือน */
 const THAI_DIACRITICS = /[ัิ-ฺ็-๎]/g;
 

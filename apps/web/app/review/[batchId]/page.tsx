@@ -4,6 +4,7 @@ import type { AccountDto, BatchDetailDto, CategoryDto } from '@dailypay/shared';
 import { apiFetch, ApiError } from '@/lib/api';
 import { formatDate } from '@/lib/format';
 import { Badge, Card, ErrorNote } from '@/components/ui';
+import DrainButton from './drain-button';
 import ReviewTable from './review-table';
 
 export const dynamic = 'force-dynamic';
@@ -54,8 +55,9 @@ export default async function ReviewBatchPage({
 
       {batch.status === 'parsing' && (
         <div className="rounded-xl bg-info/10 px-4 py-3 text-sm text-info">
-          กำลังแยกข้อมูลอยู่ — worker ยังทำงานไม่เสร็จ รีเฟรชอีกครั้งในอีกสักครู่
-          (ถ้าค้างนาน ตรวจว่ารัน <code>pnpm dev:worker</code> อยู่หรือเปล่า)
+          กำลังแยกข้อมูลอยู่ — ปกติเสร็จภายในไม่กี่วินาที รีเฟรชอีกครั้งในอีกสักครู่
+          ถ้าค้างนานกดปุ่มด้านล่างเพื่อสั่งประมวลผลเอง
+          <DrainButton />
         </div>
       )}
       {batch.errorMessage && <ErrorNote>{batch.errorMessage}</ErrorNote>}
