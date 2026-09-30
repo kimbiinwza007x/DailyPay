@@ -163,6 +163,9 @@ pnpm test      # 45 เทส ครอบ dedupe, fingerprint, parsers, categor
 fixture ของเทสคือข้อความที่ tesseract อ่านออกมาจริง ไม่ใช่ข้อความที่พิมพ์เอง
 ถ้าเจอสลิปค่ายใหม่ที่อ่านไม่ออก ให้ dump ข้อความ OCR เพิ่มเข้า `test/fixtures-ocr.json`
 
+> **repo นี้ต้องเป็น private** — `test/fixtures-ocr.json` มีข้อความจากสลิปจริง
+> (ชื่อผู้รับ เลขบัญชี 4 ตัวท้าย เลขที่รายการ) ถ้าจะเปิด public ต้องแทนด้วยข้อมูลสมมติก่อน
+
 ## Deploy ขึ้น Vercel
 
 ขึ้นเป็น **2 โปรเจกต์จาก repo เดียว** — เว็บกับ API แยกกัน ไม่มี worker ค้าง

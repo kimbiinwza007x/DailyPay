@@ -8,3 +8,8 @@ dist/
 coverage/
 data/
 .vercel/
+
+# ไฟล์ภาษาของ tesseract ที่ดาวน์โหลดมาตอนรัน (หลายสิบ MB)
+# ตอนรันจริง cache ลง /tmp แล้ว ไม่ควรมีหลุดมาอยู่ในโปรเจกต์
+*.traineddata
+*.traineddata.gz
